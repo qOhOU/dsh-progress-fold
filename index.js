@@ -3,10 +3,12 @@ import { randomUUID } from 'node:crypto'
 export const name = 'dsh-progress-fold'
 export const inject = ['systemPrompt']
 
-const instructions = '执行长任务时，查到关键结果、完成一个阶段或遇到阻塞后，用一两句用户可见的正文说明当前进展。'
-  + '连续的小操作可以合并汇报，简单任务可以直接回答。'
+const instructions = '执行长任务时，每完成一个明确步骤或一轮探索，在下一次工具调用前，用 1–3 句正文说明刚做了什么、得到了什么结果、接下来做什么。'
+  + '遇到阻塞及时说明。连续的小操作可以合并汇报，简单任务可以直接回答。\n\n'
+  + '遇到会改变方案的歧义、必须由用户决定的偏好，或核对后仍查不到且猜错代价高的事实，先向用户确认再动手。'
+  + '可以先做只读核对。优先用提问工具，有明确选项时附上推荐。'
 
-const reminder = '继续执行前，请用一两句正文向用户汇报刚完成的工作、关键发现或当前阻塞。'
+const reminder = '继续执行前，请用 1–3 句正文向用户汇报刚做了什么、得到什么结果或遇到什么阻塞，以及接下来做什么。'
 
 function wasSilentToolStep(session, turn, step) {
   const nodes = session.surface.nodes
