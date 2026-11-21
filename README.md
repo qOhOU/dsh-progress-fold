@@ -1,10 +1,24 @@
-# DSH 进度汇报插件设计方案
+# DSH 进度汇报插件
 
-`dsh-progress-fold` 是一个计划中的 DeepSeek Harness（DSH）插件。长任务执行期间，助手在拿到关键结果、完成阶段性工作或遇到阻塞时输出简短进度。回合成功结束后，DSH 原生「对话」页把中间正文和工作详情收进最终答案上方的「用时」入口，展开后可以回看。验收时只启用本插件，停用 Better Display 和 Progress Rules。
+`dsh-progress-fold` 是一个独立的 DeepSeek Harness（DSH）插件。长任务执行期间，插件引导助手在拿到关键结果、完成阶段性工作或遇到阻塞时输出简短进度。回合成功结束后，配置过的 DSH 原生「对话」页会把中间正文和工作详情收进最终答案上方的「用时」入口，展开后可以回看。
 
-## 第一版的实现范围
+## 安装与配置
 
-插件在 DSH 宿主端注册系统提示词和步骤钩子，负责引导模型汇报，以及在连续工具步骤没有可见正文时提醒模型。流式输出、用时、回合折叠和历史回放由 DSH 原生「对话」页负责。插件依赖 DSH 提供的接口，安装时无需引入两个旧插件。首版以本机 DSH Desktop 为验证环境，开发前核对实际运行版本的接口和设置项。
+克隆仓库后，在根目录用 PowerShell 打包，再把归档安装到 `desktop` profile。启用新插件，停用 Better Display 和 Progress Rules，然后回到原生「对话」页。 [DSH 插件安装说明](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/user/develop/basic/publish.md)
+
+```powershell
+npm pack --pack-destination $env:TEMP
+dsh plugin --profile desktop add (Join-Path $env:TEMP 'dsh-progress-fold-0.1.0.tgz')
+```
+
+默认连续 5 个静默工具步骤后提醒一次。在当前 profile 的 `cordis.patch.yml` 里覆盖 `dsh-progress-fold` 的配置即可调整阈值。`everySteps` 填正整数。`enforce: false` 关闭步骤提醒，系统提示词仍会引导模型分阶段汇报。
+
+```yaml
+- id: dsh-progress-fold
+  config:
+    everySteps: 5
+    enforce: true
+```
 
 ## 进度如何产生
 
@@ -26,11 +40,9 @@
 
 正常回合结束后，阶段回复随过程折叠。失败和停止的回合保留整轮过程；待审批时可继续查看当前状态。用户在过程开始后插入消息时，DSH 保留消息与过程的顺序，该轮仍可按组展开和收起。缺少轮次起点的历史记录按原生规则显示，有完整起止时间的回合可以显示用时。 [DSH 原生整轮折叠说明](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.2-rc.5/packages/client/ui-chat/src/client/conversation-nodes/README.zh.md#整轮折叠)
 
-## 开发与验收
+## 验收
 
-1. **核对本机基线。** 在两个旧插件均停用的测试配置中，确认原生「对话」页支持以上三项设置。让模型在多步骤任务中生成一段阶段回复，验证原生页面能否在完成后折叠并还原该回复。
-2. **实现独立安装包。** 建立一个 DSH bundle，包含包清单、宿主入口和 `cordis.patch.yml`。实现系统提示词和静默提醒，对外提供提醒开关与步数阈值。系统提示词和步骤钩子均使用 DSH 宿主接口。 [DSH 系统提示词服务](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/core/system-prompt/README.zh.md) [DSH 请求生命周期](https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-09-02-system-prompt-as-surface-node.zh.md)
-3. **验证触发边界。** 用可控事件测试 4 步静默不提醒、第 5 步后提醒一次、出现正文后重新计数、新回合和并行会话互不影响。验证单工具批次含多个调用、同一步重试、取消和提醒关闭的情况。
-4. **验证桌面体验。** 只启用新插件运行短任务和长任务。长任务在最终回答之前出现进度，完成后答案上方有可展开入口，重新打开历史会话仍可回看。检查中断、待审批和执行中追加消息时的显示。以本机实际效果记录支持的 DSH 版本。
+已在 DSH `0.2.2-rc.3` 的隔离 headless profile 中验证归档安装、系统提示词和项目 `AGENTS.md` 的注入，以及第 5 个静默工具步骤后在下一次请求中加入提醒。
 
-当前状态为方案已起草，安装包和桌面验收待实现。
+1. **验证触发边界。** 用可控事件测试 4 步静默不提醒、第 5 步后提醒一次、出现正文后重新计数、新回合和并行会话互不影响。验证单步骤含多个工具调用、同一步重试、取消和提醒关闭的情况。
+2. **验证桌面体验。** 只启用新插件运行短任务和长任务。长任务在最终回答之前出现进度，完成后答案上方有可展开入口，重新打开历史会话仍可回看。检查中断、待审批和执行中追加消息时的显示。
