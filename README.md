@@ -31,13 +31,13 @@ dsh plugin --profile desktop add (Join-Path $env:TEMP 'dsh-progress-fold-0.2.0.t
 
 ## 「对话」页的折叠设置
 
-在 DSH 的「设置 → 常规」选择以下原生选项。首版通过文档引导配置，由用户保留对现有显示偏好的控制。
+在 DSH Desktop `0.2.2-rc.5` 中文界面中，打开「设置 → 通用设置」，在「字号大小」下方找到以下选项。
 
 | 设置 | 推荐值 |
 | --- | --- |
-| 工作详情 | 详细（Detailed） |
-| 收起时机 | 完成时（On completion） |
-| 收起后显示的回复 | 仅最终答案（Final answer only） |
+| 工作步骤展示 | 标准（Standard），也可以选详细（Detailed） |
+| 工作步骤收起时机 | 回答结束后（On completion） |
+| 收起后显示的回复 | 仅最终回答（Final answer only） |
 
 正常回合结束后，阶段回复随过程折叠。失败和停止的回合保留整轮过程；待审批时可继续查看当前状态。用户在过程开始后插入消息时，DSH 保留消息与过程的顺序，该轮仍可按组展开和收起。缺少轮次起点的历史记录按原生规则显示，有完整起止时间的回合可以显示用时。 [DSH 原生整轮折叠说明](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.2-rc.5/packages/client/ui-chat/src/client/conversation-nodes/README.zh.md#整轮折叠)
 
